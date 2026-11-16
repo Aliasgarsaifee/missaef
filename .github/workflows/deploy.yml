@@ -1,0 +1,42 @@
+name: Deploy site
+
+on:
+  push:
+    branches: [main]
+  # On-demand, so a branch can be deployed for a look on a real phone before it merges.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deploys race; let an in-flight run finish rather than
+# publishing a half-built site.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # Installs dependencies, builds, and uploads dist/ as the Pages artifact.
+      # It also caches node_modules/.astro, which holds the resized images, so
+      # only new or changed photos are processed on each deploy.
+      - uses: withastro/action@v6
+        with:
+          # Tests and type checks run before the build: a red test must not
+          # reach the live site.
+          build-cmd: npm run verify
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

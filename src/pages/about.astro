@@ -1,0 +1,39 @@
+---
+import Base from '../layouts/Base.astro';
+import { site } from '../data/site';
+
+// All text on this page is a first draft for Fatema to rewrite in her own
+// words. It uses only her public Instagram profile and her own brief.
+// The list of places is not the full list yet: Ali is confirming it with her.
+const places = new Intl.ListFormat('en-GB', { type: 'conjunction' }).format(site.deliveredTo);
+---
+
+<Base
+  title="About"
+  description="I am Fatema Boxwala, a Certified Fine Artist in Indore. I make customised gifts, art and handmade pieces for Dawoodi Bohra occasions, birthdays and weddings."
+>
+  <header class="page-header">
+    <h1>About</h1>
+    <p>I am Fatema Boxwala, a {site.credential} based in Indore.</p>
+  </header>
+
+  <section>
+    <p>
+      Every piece I make starts with someone's wish. You bring the wish and I am the medium. What
+      reaches the table should feel like it came from your heart.
+    </p>
+    <p>
+      A lot of my work is made for Dawoodi Bohra customs and occasions: wadhavani trays, shitabi
+      packing, namakdanis and ridas. I also make for birthdays, weddings, Diwali and friendships
+      in every community.
+    </p>
+    <p>
+      I began as Artistic Rabbit, drawing portraits and teaching art. I went from being scolded
+      for crayons to being paid for my art. Today I work as {site.name}.
+    </p>
+  </section>
+
+  <section>
+    <p>{site.clients}. My pieces have travelled to {places}.</p>
+  </section>
+</Base>

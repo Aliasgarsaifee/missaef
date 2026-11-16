@@ -1,0 +1,216 @@
+---
+import ContactButtons from '../components/ContactButtons.astro';
+import { collectionNames, collectionSlugs } from '../data/collections';
+import { site } from '../data/site';
+import Base from '../layouts/Base.astro';
+import { instagramMessageUrl, instagramProfileUrl, whatsappUrl } from '../lib/links';
+
+// The three questions are the ones Fatema's own order script asks.
+// All wording on this page is a first draft for her to edit.
+
+// Until her number arrives no WhatsApp button is published. The dev server
+// shows a marked placeholder so the layout can be judged with both buttons.
+const whatsappPlaceholder = !site.whatsapp && import.meta.env.DEV;
+---
+
+<Base
+  title={site.orderLabel}
+  description="Tell me what you would like made, the occasion and your vision, and send it to me in one message."
+>
+  <header class="page-header">
+    <h1>{site.orderLabel}</h1>
+    <p>
+      Three questions are all I need to begin. Answer them here and your message is written for
+      you, ready to send.
+    </p>
+  </header>
+
+  <form id="wish-form" class="wish-form">
+    <div class="field">
+      <label for="wish-what">What would you like made?</label>
+      <input id="wish-what" name="what" type="text" required autocomplete="off" />
+    </div>
+
+    <div class="field">
+      <label for="wish-occasion">What is the occasion?</label>
+      <input id="wish-occasion" name="occasion" type="text" required autocomplete="off" />
+    </div>
+
+    <div class="field">
+      <label for="wish-vision">What is your vision or theme?</label>
+      <textarea id="wish-vision" name="vision" rows="4" required></textarea>
+    </div>
+
+    <fieldset>
+      <legend>Collection <span class="optional">(optional)</span></legend>
+      <div class="choices">
+        {
+          collectionSlugs.map((slug) => (
+            <label>
+              <input type="radio" name="collection" value={collectionNames[slug]} />
+              {collectionNames[slug]}
+            </label>
+          ))
+        }
+        <label>
+          <input type="radio" name="collection" value="" checked />
+          Not sure
+        </label>
+      </div>
+      <p class="hint">If you are not sure, I will suggest one.</p>
+    </fieldset>
+
+    <div class="field">
+      <label for="wish-date">Date needed <span class="optional">(optional)</span></label>
+      <input id="wish-date" name="neededBy" type="date" />
+    </div>
+
+    <div class="field">
+      <label for="wish-city">Delivery city <span class="optional">(optional)</span></label>
+      <input id="wish-city" name="city" type="text" autocomplete="address-level2" />
+    </div>
+
+    <!-- Disabled until the script is running, so a browser without it cannot
+         submit the answers into the page address. -->
+    <button id="wish-submit" class="button" type="submit" disabled>Write my message</button>
+    <noscript>
+      <p class="hint">This form needs JavaScript. You can message me directly below.</p>
+    </noscript>
+  </form>
+
+  <section id="wish-result" class="wish-result" aria-labelledby="wish-result-heading" tabindex="-1" hidden>
+    <h2 id="wish-result-heading">Your message</h2>
+    <p>Read it through, then send it to me.</p>
+    <textarea id="wish-message" class="wish-message" rows="9" readonly aria-label="Your message"
+    ></textarea>
+    <div class="contact-buttons">
+      {
+        site.whatsapp && (
+          <a
+            id="wish-whatsapp"
+            class="button"
+            href={whatsappUrl(site.whatsapp)}
+            target="_blank"
+            rel="noopener"
+          >
+            Send on WhatsApp
+          </a>
+        )
+      }
+      {
+        whatsappPlaceholder && (
+          <span class="button placeholder" aria-disabled="true">
+            Send on WhatsApp (placeholder: number not added yet)
+          </span>
+        )
+      }
+      <a
+        id="wish-instagram"
+        class="button"
+        href={instagramMessageUrl(site.instagram)}
+        target="_blank"
+        rel="noopener"
+      >
+        Copy and open Instagram
+      </a>
+    </div>
+    <p id="wish-status" class="hint" role="status"></p>
+  </section>
+
+  <section aria-labelledby="direct-heading">
+    <h2 id="direct-heading">Or message me directly</h2>
+    <ContactButtons />
+    <p>
+      See new work on Instagram:
+      <a href={instagramProfileUrl(site.instagram)} rel="noopener">@{site.instagram}</a>
+    </p>
+  </section>
+</Base>
+
+<script>
+  import { site } from '../data/site';
+  import { whatsappUrl } from '../lib/links';
+  import { composeWish, missingAnswers, type WishAnswers } from '../lib/wish';
+
+  const form = document.querySelector<HTMLFormElement>('#wish-form')!;
+  const submit = document.querySelector<HTMLButtonElement>('#wish-submit')!;
+  const result = document.querySelector<HTMLElement>('#wish-result')!;
+  const messageBox = document.querySelector<HTMLTextAreaElement>('#wish-message')!;
+  const whatsappLink = document.querySelector<HTMLAnchorElement>('#wish-whatsapp');
+  const instagramLink = document.querySelector<HTMLAnchorElement>('#wish-instagram')!;
+  const status = document.querySelector<HTMLElement>('#wish-status')!;
+
+  type TextField = HTMLInputElement | HTMLTextAreaElement;
+
+  function readAnswers(): WishAnswers {
+    const data = new FormData(form);
+    const text = (name: string) => String(data.get(name) ?? '');
+    return {
+      what: text('what'),
+      occasion: text('occasion'),
+      vision: text('vision'),
+      collection: text('collection'),
+      neededBy: text('neededBy'),
+      city: text('city'),
+    };
+  }
+
+  submit.disabled = false;
+
+  // Typing in a field clears the "please answer" message set below.
+  form.addEventListener('input', (event) => {
+    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+      event.target.setCustomValidity('');
+    }
+  });
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const answers = readAnswers();
+
+    // The browser already stops an empty required field. This catches an
+    // answer made only of spaces, which the browser counts as filled in.
+    const missing = missingAnswers(answers);
+    for (const name of missing) {
+      (form.elements.namedItem(name) as TextField).setCustomValidity('Please answer this question.');
+    }
+    if (missing.length > 0) {
+      form.reportValidity();
+      return;
+    }
+
+    const message = composeWish(answers);
+    messageBox.value = message;
+    if (whatsappLink && site.whatsapp) whatsappLink.href = whatsappUrl(site.whatsapp, message);
+    status.textContent = '';
+    result.hidden = false;
+    // Grow the box to fit the whole message, so nothing hides behind a scroll.
+    // Measured after it is shown: a hidden box has no height to measure.
+    messageBox.style.height = 'auto';
+    messageBox.style.height = `${messageBox.scrollHeight + 2}px`;
+    result.focus();
+  });
+
+  // The link is left to open Instagram as an ordinary tap, which no browser
+  // blocks. The copy is started inside the same tap, as browsers require.
+  instagramLink.addEventListener('click', () => {
+    copy(messageBox.value).then(
+      () => {
+        status.textContent = 'Copied. Paste it into the chat with me.';
+      },
+      () => {
+        // Select the message so it can be copied by hand in one step.
+        messageBox.focus();
+        messageBox.setSelectionRange(0, messageBox.value.length);
+        status.textContent =
+          'This phone would not copy it. Copy the message above, then paste it into the chat with me.';
+      },
+    );
+  });
+
+  function copy(text: string): Promise<void> {
+    // No clipboard on an old browser, or on a page not served over https.
+    if (!navigator.clipboard) return Promise.reject(new Error('Clipboard is not available'));
+    return navigator.clipboard.writeText(text);
+  }
+</script>

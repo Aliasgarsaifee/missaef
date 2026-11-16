@@ -1,0 +1,50 @@
+---
+// A piece as it appears in a list: its photo in the gold frame, then its
+// title, which links to its page. A featured piece is shown large, at the
+// photo's own shape, with its wish note resting on the frame. Every other
+// piece gets the same 4:5 frame, so the grid stays even.
+import { Image } from 'astro:assets';
+import type { Piece } from '../lib/work';
+import WishNote from './WishNote.astro';
+
+interface Props {
+  piece: Piece;
+  /** Load the photo straight away. Set it on the first card of a page only. */
+  priority?: boolean;
+}
+
+const { piece, priority = false } = Astro.props;
+const image = piece.images[0];
+// The title is printed under the photo. Reading the same words out twice
+// helps nobody, so the photo is only described when its alt says more.
+const alt = image.alt === piece.title ? '' : image.alt;
+---
+
+<article class="piece-card">
+  <span class="frame">
+    {
+      piece.featured ? (
+        <Image
+          src={image.src}
+          alt={alt}
+          width={1200}
+          sizes="(min-width: 48rem) 44rem, 100vw"
+          priority={priority}
+        />
+      ) : (
+        <Image
+          src={image.src}
+          alt={alt}
+          width={700}
+          height={875}
+          fit="cover"
+          sizes="(min-width: 48rem) 33vw, 50vw"
+          priority={priority}
+        />
+      )
+    }
+  </span>
+  {piece.featured && piece.wish && <WishNote wish={piece.wish} wishedBy={piece.wishedBy} />}
+  <h3><a href={piece.href}>{piece.title}</a></h3>
+  {!piece.confirmed && <p class="draft-flag">Draft, not published</p>}
+</article>

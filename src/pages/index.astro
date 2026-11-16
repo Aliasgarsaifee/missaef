@@ -1,0 +1,108 @@
+---
+import { Image } from 'astro:assets';
+import WishNote from '../components/WishNote.astro';
+import { collectionLines, collectionNames, collectionSlugs } from '../data/collections';
+import { site } from '../data/site';
+import Base from '../layouts/Base.astro';
+import { featuredFirst } from '../lib/browse';
+import { withBase } from '../lib/links';
+import { loadPieces } from '../lib/work';
+
+// All text on this page is a first draft for Fatema to edit.
+
+const pieces = await loadPieces();
+
+// The hero shows one finished piece. A featured piece that has its wish comes
+// first, because the wish note is what the page is built around.
+const featured = pieces.filter((piece) => piece.featured);
+const heroPiece = featured.find((piece) => piece.wish) ?? featured[0] ?? pieces[0];
+const heroImage = heroPiece?.images[0];
+
+// The two doors. Each collection is shown by one of its own pieces, and not
+// the hero's piece again when it has another. A collection with no pieces
+// has no door.
+const doors = collectionSlugs.flatMap((slug) => {
+  const own = featuredFirst(pieces.filter((piece) => piece.collection === slug));
+  const face = own.find((piece) => piece !== heroPiece) ?? own[0];
+  return face ? [{ slug, face }] : [];
+});
+---
+
+<Base shareImage={heroImage?.src}>
+  <section class="hero">
+    <h1>{site.promise}</h1>
+    <p>
+      I make gifts and hampers, art and showpieces, and pieces made to use. Each one is made by
+      hand in Indore, for one person and one occasion.
+    </p>
+    <p><a class="button" href={withBase('/contact')}>{site.orderLabel}</a></p>
+
+    {
+      heroPiece && heroImage && (
+        <div class="hero-piece">
+          <a class="frame" href={heroPiece.href}>
+            <Image
+              src={heroImage.src}
+              alt={heroImage.alt}
+              width={1200}
+              sizes="(min-width: 48rem) 44rem, 100vw"
+              priority
+            />
+          </a>
+          {heroPiece.wish && <WishNote wish={heroPiece.wish} wishedBy={heroPiece.wishedBy} />}
+        </div>
+      )
+    }
+  </section>
+
+  {
+    doors.length > 0 && (
+      <section class="stage" aria-labelledby="doors-heading">
+        <h2 id="doors-heading">The collections</h2>
+        {/* Two doors of the same size, side by side even on a phone, so
+            neither one comes first. */}
+        <ul class="doors">
+          {doors.map(({ slug, face }) => (
+            <li>
+              <a href={withBase(`/${slug}`)}>
+                <span class="frame">
+                  <Image
+                    src={face.images[0].src}
+                    alt=""
+                    width={800}
+                    height={1000}
+                    fit="cover"
+                    sizes="(min-width: 48rem) 22rem, 50vw"
+                  />
+                </span>
+                <span class="door-name">{collectionNames[slug]}</span>
+                <span class="door-line">{collectionLines[slug]}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  <section class="wide" aria-labelledby="make-heading">
+    <h2 id="make-heading">What I make</h2>
+    <ul class="offers">
+      <li>
+        <h3>Gifts and hampers</h3>
+        <p>Wadhavani trays, shitabi packing, hampers and bouquets.</p>
+      </li>
+      <li>
+        <h3>Art and showpieces</h3>
+        <p>Portrait sketches, string art and miniature clay scenes.</p>
+      </li>
+      <li>
+        <h3>Made to use</h3>
+        <p>Namakdanis, keychains, mirrors and hand-painted ridas.</p>
+      </li>
+    </ul>
+    <p><a href={withBase('/offer')}>What I offer, and how an order works</a></p>
+  </section>
+
+  <p class="trust">Fatema Boxwala, {site.credential}. {site.clients}.</p>
+</Base>

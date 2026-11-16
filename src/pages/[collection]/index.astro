@@ -1,0 +1,100 @@
+---
+// One page per collection: the two doors. Both pages are built from this one
+// file, so the two collections can never be given a different look.
+import PieceCard from '../../components/PieceCard.astro';
+import { kinds, occasions } from '../../data/catalog';
+import { collectionLines, collectionNames, collectionSlugs, type CollectionSlug } from '../../data/collections';
+import Base from '../../layouts/Base.astro';
+import { featuredFirst, groupByKind, occasionsIn } from '../../lib/browse';
+import { loadPieces, type Piece } from '../../lib/work';
+
+// A collection with no pieces gets no page and no door.
+export async function getStaticPaths() {
+  const pieces = await loadPieces();
+  return collectionSlugs
+    .map((slug) => ({ slug, pieces: pieces.filter((piece) => piece.collection === slug) }))
+    .filter(({ pieces }) => pieces.length > 0)
+    .map(({ slug, pieces }) => ({ params: { collection: slug }, props: { slug, pieces } }));
+}
+
+interface Props {
+  slug: CollectionSlug;
+  pieces: Piece[];
+}
+
+const { slug, pieces } = Astro.props;
+const name = collectionNames[slug];
+const line = collectionLines[slug];
+
+const groups = groupByKind(pieces, kinds).map((group) => ({
+  kind: group.kind,
+  pieces: featuredFirst(group.pieces),
+}));
+const filterBy = occasionsIn(pieces, occasions);
+---
+
+<Base title={`${name} collection`} description={`${line} ${name} pieces by Fatema Boxwala, handmade in Indore.`} shareImage={pieces[0]?.images[0].src}>
+  <header class="page-header">
+    <h1>{name}</h1>
+    <p>{line}</p>
+
+    {
+      filterBy.length > 0 && (
+        // Shown by the script below. Without it every piece stays visible.
+        <div id="occasion-filter" class="filter" role="group" aria-label="Show pieces for an occasion" hidden>
+          <button type="button" aria-pressed="true" data-occasion="">
+            All
+          </button>
+          {filterBy.map((occasion) => (
+            <button type="button" aria-pressed="false" data-occasion={occasion}>
+              {occasion}
+            </button>
+          ))}
+        </div>
+      )
+    }
+  </header>
+
+  {
+    groups.map(({ kind, pieces }, groupIndex) => (
+      <section class="kind-group" aria-labelledby={kind.slug}>
+        <h2 id={kind.slug}>{kind.title}</h2>
+        <ul class="pieces">
+          {pieces.map((piece, pieceIndex) => (
+            <li class:list={{ featured: piece.featured }} data-occasions={piece.tags.join('|')}>
+              <PieceCard piece={piece} priority={groupIndex === 0 && pieceIndex === 0} />
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))
+  }
+</Base>
+
+<script>
+  const filter = document.querySelector<HTMLElement>('#occasion-filter');
+
+  if (filter) {
+    const buttons = [...filter.querySelectorAll<HTMLButtonElement>('button')];
+    const items = [...document.querySelectorAll<HTMLElement>('[data-occasions]')];
+    const groups = [...document.querySelectorAll<HTMLElement>('.kind-group')];
+
+    filter.hidden = false;
+
+    filter.addEventListener('click', (event) => {
+      const chosen = (event.target as HTMLElement).closest('button');
+      if (!chosen) return;
+      const occasion = chosen.dataset.occasion ?? '';
+
+      for (const button of buttons) button.setAttribute('aria-pressed', String(button === chosen));
+      for (const item of items) {
+        const has = (item.dataset.occasions ?? '').split('|').includes(occasion);
+        item.hidden = occasion !== '' && !has;
+      }
+      // A kind with nothing left to show would be a heading over empty space.
+      for (const group of groups) {
+        group.hidden = !group.querySelector('[data-occasions]:not([hidden])');
+      }
+    });
+  }
+</script>

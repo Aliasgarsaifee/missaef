@@ -1,0 +1,21 @@
+---
+// The wish that started a piece, in the client's own words. This is the one
+// bold element on the site; everything around it stays quiet.
+//
+// Only ever shows a wish Ali has passed on. A piece without one simply does
+// not render this component.
+interface Props {
+  wish: string;
+  /** A relationship, never a name: "her best friend, Pune". */
+  wishedBy?: string;
+}
+
+const { wish, wishedBy } = Astro.props;
+---
+
+<figure class="wish-note">
+  <blockquote>
+    <p>{wish}</p>
+  </blockquote>
+  {wishedBy && <figcaption>{wishedBy}</figcaption>}
+</figure>

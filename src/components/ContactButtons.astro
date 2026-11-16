@@ -1,0 +1,20 @@
+---
+// The direct route: a plain message, for a visitor who would rather talk than
+// fill in the order form.
+import { site } from '../data/site';
+import { instagramMessageUrl, whatsappUrl } from '../lib/links';
+import { enquiryMessage } from '../lib/messages';
+---
+
+<div class="contact-buttons">
+  <a class="button quiet" href={instagramMessageUrl(site.instagram)} rel="noopener">
+    Message on Instagram
+  </a>
+  {
+    site.whatsapp && (
+      <a class="button quiet" href={whatsappUrl(site.whatsapp, enquiryMessage())} rel="noopener">
+        Chat on WhatsApp
+      </a>
+    )
+  }
+</div>

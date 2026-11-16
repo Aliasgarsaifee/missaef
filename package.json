@@ -1,0 +1,27 @@
+{
+  "name": "missaef",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Portfolio website for missaef: fine art and handcrafted creations.",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro check && astro build",
+    "build:drafts": "SHOW_DRAFTS=1 astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "verify": "vitest run && astro check && astro build"
+  },
+  "dependencies": {
+    "@astrojs/check": "^0.9.12",
+    "@fontsource-variable/eb-garamond": "^5.3.0",
+    "@fontsource/cedarville-cursive": "^5.3.0",
+    "astro": "^7.4.12",
+    "typescript": "^6.0.3"
+  },
+  "devDependencies": {
+    "vitest": "^5.1.0"
+  }
+}

@@ -1,0 +1,86 @@
+---
+// One page per piece, showing one piece at a time. The order follows the
+// brand idea: the photo, the client's wish, then the person and the occasion
+// (the story), and only then the making. Further photos come last.
+import { Image } from 'astro:assets';
+import { render } from 'astro:content';
+import WishNote from '../../components/WishNote.astro';
+import Base from '../../layouts/Base.astro';
+import { withBase } from '../../lib/links';
+import { loadPieces, type Piece } from '../../lib/work';
+
+export async function getStaticPaths() {
+  const pieces = await loadPieces();
+  return pieces.map((piece) => ({ params: { id: piece.id }, props: { piece } }));
+}
+
+interface Props {
+  piece: Piece;
+}
+
+const { piece } = Astro.props;
+const { Content } = await render(piece.entry);
+const [lead, ...moreViews] = piece.images;
+
+// The story opens the link preview when there is one. Otherwise the category
+// line says in plain words what this kind of piece is.
+const story = (piece.entry.body ?? '').replace(/\s+/g, ' ').trim();
+const description = story ? story.slice(0, 155) : `${piece.title}. ${piece.category.intro}`;
+
+// "Birthday", "Anniversary and Wedding": written as words, not a row of tags.
+const occasionList = new Intl.ListFormat('en-GB', { type: 'conjunction' }).format(piece.tags);
+---
+
+<Base title={piece.title} description={description} shareImage={lead.src}>
+  <article class="piece">
+    <span class="frame">
+      <Image
+        src={lead.src}
+        alt={lead.alt}
+        width={1200}
+        sizes="(min-width: 48rem) 44rem, 100vw"
+        priority
+      />
+    </span>
+
+    {piece.wish && <WishNote wish={piece.wish} wishedBy={piece.wishedBy} />}
+
+    <h1>{piece.title}</h1>
+    {!piece.confirmed && <p class="draft-flag">Draft, not published</p>}
+
+    <div class="story">
+      <Content />
+    </div>
+
+    <div class="piece-facts">
+      {/* The plain line for a visitor who does not know the term. */}
+      <p class="about-term">{piece.category.intro}</p>
+      <p>{piece.medium}</p>
+      {
+        piece.collection && (
+          <p>
+            From the <a href={withBase(`/${piece.collection}`)}>{piece.collectionName} collection</a>
+          </p>
+        )
+      }
+      {piece.tags.length > 0 && <p>Made for: {occasionList}</p>}
+    </div>
+
+    {
+      moreViews.length > 0 && (
+        <div class="more-views">
+          {moreViews.map((image) => (
+            <span class="frame">
+              <Image
+                src={image.src}
+                alt={image.alt}
+                width={1200}
+                sizes="(min-width: 48rem) 44rem, 100vw"
+              />
+            </span>
+          ))}
+        </div>
+      )
+    }
+  </article>
+</Base>
