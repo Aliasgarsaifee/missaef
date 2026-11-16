@@ -1,0 +1,19 @@
+---
+// Shown for any address that is not a page. Astro builds this as 404.html at
+// the top of the site, which is the file GitHub Pages serves for a miss.
+// The wording is a first draft for Fatema to edit.
+import Base from '../layouts/Base.astro';
+import { withBase } from '../lib/links';
+---
+
+<Base
+  title="Page not found"
+  description="This page is not here. The address may have changed, or the piece may no longer be shown."
+  noindex
+>
+  <header class="page-header">
+    <h1>This page is not here.</h1>
+    <p>The address may have changed, or the piece may no longer be shown.</p>
+    <p><a class="button quiet" href={withBase('/')}>Go to the home page</a></p>
+  </header>
+</Base>

@@ -19,9 +19,11 @@ interface Props {
   description?: string;
   /** Image shown when this page's link is shared in a chat. */
   shareImage?: ImageMetadata;
+  /** Keeps the page out of search results. For the not-found page. */
+  noindex?: boolean;
 }
 
-const { title, description = site.description, shareImage } = Astro.props;
+const { title, description = site.description, shareImage, noindex = false } = Astro.props;
 
 const pieces = await loadPieces();
 const pageTitle = title ? `${title} | ${site.name}` : `${site.name} | ${site.titleLine}`;
@@ -55,7 +57,7 @@ const here = Astro.url.pathname;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
-    <link rel="canonical" href={canonical} />
+    {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical} />}
     <link rel="icon" type="image/svg+xml" href={withBase('/favicon.svg')} />
     <meta name="theme-color" content="#f5efe4" />
     <!-- Fetched early, so the page's words appear in their own typeface. -->
